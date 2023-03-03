@@ -6,7 +6,7 @@
 /*   By: admansar <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/25 12:28:45 by admansar          #+#    #+#             */
-/*   Updated: 2023/03/03 23:30:12 by admansar         ###   ########.fr       */
+/*   Updated: 2023/03/03 23:46:15 by admansar         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,8 +17,8 @@
 #include <unistd.h>
 # define time_to_eat 200
 # define time_to_sleep 200
-# define time_to_die 410
-# define number_of_philosophers 5
+# define time_to_die 800
+# define number_of_philosophers 10
 
 
 	pthread_mutex_t *mutexfork;
@@ -57,7 +57,7 @@ void check_if_die(long int **re,long int *die,pthread_mutex_t *mutexfork, int *b
 			if ((*re)[1] >= dead[is] - time_to_eat)
 			{
 				(*re)[0] = is;
-				(*re)[1] = current_time;
+				(*re)[1] = current_time + dead[is];
 			}
 			//	(*end) = 0;
 			pthread_mutex_unlock(&mutexfork[is]);
@@ -130,7 +130,7 @@ while (str->breaker)
 		gettimeofday(&ct, NULL);
 		current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
 		check_point[is] = current_time - check_point[is];
-		if (die[is] - check_point[is] <= time_to_eat/*check_point[is]*/ || str->breaker == 0)
+		if (time_to_die - check_point[is] <= time_to_eat/*check_point[is]*/ || str->breaker == 0)
 		{
 			oneortwo = 1;
 			str->breaker = 0;
