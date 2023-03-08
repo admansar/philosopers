@@ -6,7 +6,7 @@
 /*   By: admansar <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/25 12:28:45 by admansar          #+#    #+#             */
-/*   Updated: 2023/03/07 20:20:46 by admansar         ###   ########.fr       */
+/*   Updated: 2023/03/08 22:08:46 by admansar         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,13 +15,20 @@
 #include <sys/time.h>
 #include <pthread.h>
 #include <unistd.h>
-# define time_to_eat 200
-# define time_to_sleep 200
-# define time_to_die 410
-# define number_of_philosophers 5
 
 
+
+
+typedef struct t_philo
+{
+	int number_of_philosophers;
+	int time_to_eat;
+	int time_to_die;
+	int time_to_sleep;
+	int number_of_times_each_philosopher_must_eat;
 	pthread_mutex_t *mutexfork;
+}	s_philo;
+
 
 typedef struct t_struct
 {
@@ -29,16 +36,37 @@ typedef struct t_struct
 	int			*index;
 	int			sync;
 	int			breaker;
-	int			number_of_times_each_philosopher_must_eat;
+	s_philo		*philo;
 }				s_struct;
 
-long int max(long int x, long int y)
+int ft_atoi(const char *str)
 {
-	if (x > y)
-		return (x);
-	return (y);
-}
+    int i;
+    int count;
+    int d;
 
+    i = 0;
+    while (str[i] == 32 || (str[i] >= 9 && str[i] <= 13))
+        i++;
+    d = 0;
+    count = 1;
+    if (str[i] == '-')
+    {
+        count = -1;
+        i++;
+    }
+    else if (str[i] == '+')
+    {
+        i++;
+    }
+    while (str[i] >= 48 && str[i] <= 57 && str[i])
+    {
+        d = d * 10;
+        d = d + str[i] - 48;
+        i++;
+    }
+    return (count * d);
+}
 
 void check_if_die(long int **re,int n, pthread_mutex_t *mutexfork, int *breaker, long int current_time, long int check_point, int is, int ttd)
 {
@@ -46,17 +74,11 @@ void check_if_die(long int **re,int n, pthread_mutex_t *mutexfork, int *breaker,
 
 	dead = malloc (sizeof(long int) * n);
 
-//	while (i--)
-//	{
-//		printf ("/////check_point[%d] = %ld\n", is, check_point);
-		//	printf ("checkpoint[%d] <== %ld\n", is, check_point);
-//	printf ("---->%ld---->%ld-->%d\n", die[i] - check_point[i] - time_to_eat , i, (*end));
 			dead[is] = ttd - check_point;
-//			printf ("\x1B[32mto %d : you will die in %ld\x1B[0m\n", is, dead[is]);
-		if (/*die[is] - (time_to_eat + check_point)*/dead[is] < 0)
+		//	printf ("-\x1B[36m--->%ld--> die = --check_point = %ld ---time_to_eat = %d---->%d\n\x1B[37m", dead[is] /*- time_to_eat */, check_point , time_to_eat, is);
+		if (dead[is] < 0)
 		{
 			pthread_mutex_lock(&mutexfork[is]);
-//	printf ("-\x1B[36m--->%ld--> die = %ld --check_point = %ld ---time_to_eat = %d---->%d\n\x1B[37m", dead[is] /*- time_to_eat */,die[is], check_point , time_to_eat, is);
 			(*breaker) = 0;
 			(*re)[1] = 0;
 			if ((*re)[1] >= dead[is])
@@ -64,11 +86,7 @@ void check_if_die(long int **re,int n, pthread_mutex_t *mutexfork, int *breaker,
 				(*re)[0] = is;
 				(*re)[1] = current_time + dead[is];
 			}
-			//	(*end) = 0;
 			pthread_mutex_unlock(&mutexfork[is]);
-	//		break;
-//		}
-//			pthread_mutex_unlock(&mutexfork[i]);
 	}
 }
 
@@ -88,30 +106,11 @@ void	msleep(int tts)
 	}
 }
 
-
-//void syn(int n, int is, pthread_mutex_t *mutexfork, int *sync)
-//{
-//		pthread_mutex_lock(&mutexfork[is]);
-//		usleep (is);
-//		printf ("%d\n", (*sync));
-//		(*sync) = (*sync) + 1;
-//	printf ("who :%d\n", is);
-//	while (1)
-//	{
-//		if (n == (*sync))
-//		{
-//			pthread_mutex_unlock(&mutexfork[is]);
-//			break ;
-//		}
-//	}
-//}
-
 void *ss(void *philo)
 {
 	int is;
 	is = *((s_struct*)philo)->index;
 	s_struct *str = (s_struct *)philo;
-//	printf ("===============>%d\n", is);
 	long int *re;
 	re = str->re;
 	int right = is;
@@ -120,67 +119,61 @@ void *ss(void *philo)
 	long int start_time , current_time;
 	long int *die;
 	int oneortwo = 0;
-	//int i = number_of_philosophers;
 	long int *check_point;
 	long int *check_point2;
-	int eat_times = str->number_of_times_each_philosopher_must_eat;
+	int eat_times = str->philo->number_of_times_each_philosopher_must_eat;
 
-//	usleep(is + 1);
-//	syn(number_of_philosophers, is, mutexfork, &str->sync);
-//	printf ("%d\n", is);
 	gettimeofday(&ct, NULL);
 	start_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000;
-	check_point = malloc (sizeof(long int) * number_of_philosophers);
-	check_point2 = malloc (sizeof(long int) * number_of_philosophers);
-	die = malloc (sizeof(long int) * number_of_philosophers);
-//	while (i--)
-		die[is] = time_to_die;
-	if (left == number_of_philosophers)
+	check_point = malloc (sizeof(long int) * str->philo->number_of_philosophers);
+	check_point2 = malloc (sizeof(long int) * str->philo->number_of_philosophers);
+	die = malloc (sizeof(long int) * str->philo->number_of_philosophers);
+		die[is] = str->philo->time_to_die;
+	if (left == str->philo->number_of_philosophers)
 		left = 0;
 	str->breaker = 1;
 while (str->breaker && eat_times)
 {
-//	printf ("++++++++++++++-------------->%d\n", str->eat_times);
 	if (is % 2 == 1)
 	{
 		gettimeofday(&ct, NULL);
 		current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
 		check_point[is] = current_time;
 		check_point2[is] = current_time;
-		pthread_mutex_lock(&mutexfork[left]);
+		pthread_mutex_lock(&str->philo->mutexfork[left]);
 		gettimeofday(&ct, NULL);
 		current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
 		check_point[is] = current_time - check_point[is];
-		if (time_to_die - check_point[is] < 0/*check_point[is]*/ || str->breaker == 0)
+		if (str->philo->time_to_die - check_point[is] <= 0 || str->breaker == 0)
 		{
 			oneortwo = 1;
 			str->breaker = 0;
-			pthread_mutex_unlock(&mutexfork[left]);
-		//	pthread_mutex_unlock(&mutexfork[right]);
+			pthread_mutex_unlock(&str->philo->mutexfork[left]);
 			break;
 		}
 		printf ("%ld %d has taken a fork\n", current_time, is + 1);
-		pthread_mutex_lock(&mutexfork[right]);
+		pthread_mutex_lock(&str->philo->mutexfork[right]);
 		gettimeofday(&ct, NULL);
 		current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
 		check_point2[is] = current_time - check_point2[is];
-		if (/*die[is] <= 0*/time_to_die - check_point2[is] < 0/*check_point2[is]*/ || str->breaker == 0)
+		if (str->philo->time_to_die - check_point2[is] < 0 || str->breaker == 0)
 		{
 			oneortwo = 2;
 			str->breaker = 0;
-			pthread_mutex_unlock(&mutexfork[right]);
-			pthread_mutex_unlock(&mutexfork[left]);
+			pthread_mutex_unlock(&str->philo->mutexfork[right]);
+			pthread_mutex_unlock(&str->philo->mutexfork[left]);
 			break;
 		}
 		check_point[is] = current_time;
 		check_point2[is] = current_time;
+	//	printf ("\e[1;34mleft time for %d est %ld --------- checkpoint ->%ld\n\e[0m", is + 1, time_to_die - check_point[is], check_point[is]);
 		printf ("%ld %d has taken a fork\n", current_time, is + 1);
 		printf ("%ld %d is eating \n", current_time, is + 1);
 		eat_times--;
-		die[is] = time_to_die;
-		msleep(time_to_eat);
-		pthread_mutex_unlock(&mutexfork[left]);
-		pthread_mutex_unlock(&mutexfork[right]);
+		die[is] = str->philo->time_to_die - str->philo->time_to_eat;
+		msleep(str->philo->time_to_eat);
+		pthread_mutex_unlock(&str->philo->mutexfork[left]);
+		pthread_mutex_unlock(&str->philo->mutexfork[right]);
 	}
 	else
 	{
@@ -188,30 +181,30 @@ while (str->breaker && eat_times)
 		current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
 		check_point[is] = current_time;
 		check_point2[is] = current_time;
-			usleep(1);
-		pthread_mutex_lock(&mutexfork[right]);
+		//	usleep(1);
+		pthread_mutex_lock(&str->philo->mutexfork[right]);
 		gettimeofday(&ct, NULL);
 		current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
 		check_point[is] = current_time - check_point[is];
-		if (/*die[is] <= 0*//*check_point[is]*/ time_to_die - check_point[is] < 0|| str->breaker == 0)
+//		printf ("\e[1;34mleft time for %d est %ld --------- checkpoint ->%ld\n\e[0m", is + 1, str->philo->time_to_die - check_point[is], check_point[is]);
+		if (str->philo->time_to_die - check_point[is] <= 0 || str->breaker == 0)
 		{
 			oneortwo = 1;
 			str->breaker = 0;
-			pthread_mutex_unlock(&mutexfork[right]);
-	//		pthread_mutex_unlock(&mutexfork[left]);
+			pthread_mutex_unlock(&str->philo->mutexfork[right]);
 			break;
 		}
 		printf ("%ld %d has taken a fork\n", current_time, is + 1);
-		pthread_mutex_lock(&mutexfork[left]);
+		pthread_mutex_lock(&str->philo->mutexfork[left]);
 		gettimeofday(&ct, NULL);
 		current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
 		check_point2[is] = current_time - check_point2[is];
-		if (/*die[is] <= check_point2[is]*/ time_to_die - check_point2[is] < 0|| str->breaker == 0)
+		if ( str->philo->time_to_die - check_point2[is] < 0 || str->breaker == 0)
 		{
 			oneortwo = 2;
 			str->breaker = 0;
-			pthread_mutex_unlock(&mutexfork[right]);
-			pthread_mutex_unlock(&mutexfork[left]);
+			pthread_mutex_unlock(&str->philo->mutexfork[right]);
+			pthread_mutex_unlock(&str->philo->mutexfork[left]);
 			break;
 		}
 		check_point[is] = current_time;
@@ -219,10 +212,10 @@ while (str->breaker && eat_times)
 		printf ("%ld %d has taken a fork\n", current_time, is + 1);
 		printf ("%ld %d is eating \n", current_time, is + 1);
 		eat_times--;
-		die[is] = time_to_die;
-		msleep(time_to_eat);
-		pthread_mutex_unlock(&mutexfork[right]);
-		pthread_mutex_unlock(&mutexfork[left]);
+		die[is] = str->philo->time_to_die - str->philo->time_to_eat;
+		msleep(str->philo->time_to_eat);
+		pthread_mutex_unlock(&str->philo->mutexfork[right]);
+		pthread_mutex_unlock(&str->philo->mutexfork[left]);
 	}
 	if (str->breaker == 0)
 	{
@@ -231,22 +224,19 @@ while (str->breaker && eat_times)
 		gettimeofday(&ct, NULL);
 		current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
 		check_point[is] = current_time - check_point[is];
-//		printf ("checkpoint[%d] = %ld\n", is, check_point[is]);
-	if (/*die[is] <= 0*//*check_point[is]*/time_to_die - check_point[is] < 0 || str->breaker == 0)
+	if (str->philo->time_to_die - check_point[is] <= 0 || str->breaker == 0)
 	{
 			oneortwo = 1;
 		str->breaker = 0;
 		break;
 	}
 	printf ("%ld %d is sleeping \n", current_time, is + 1);
-		msleep(time_to_sleep);
-		die[is] = die[is] - time_to_sleep;
-//	check_point[is] = current_time;
+		msleep(str->philo->time_to_sleep);
+		die[is] = die[is] - str->philo->time_to_sleep;
 	gettimeofday(&ct, NULL);
 	current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
 		check_point2[is] = current_time - check_point2[is];
-//		printf ("checkpoint2[%d] = %ld\n", is, check_point2[is]);
-	if (/*die[is] <= 0*//*check_point2[is]*/time_to_die - check_point2[is] < 0 || str->breaker == 0)
+	if (str->philo->time_to_die - check_point2[is] <= 0 || str->breaker == 0)
 	{
 			oneortwo = 2;
 		str->breaker = 0;
@@ -254,77 +244,85 @@ while (str->breaker && eat_times)
 	}
 	current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
 	printf("%ld %d is thinking\n",current_time, is + 1);
-	if (/*die[is] <= 0*//* check_point2[is]*/time_to_die - check_point2[is] < 0 || str->breaker == 0)
+	if (str->philo->time_to_die - check_point2[is] <= 0 || str->breaker == 0)
 	{
 		oneortwo = 2;
 		str->breaker = 0;
 	}
-//	check_if_die(&re, die, mutexfork, &str->breaker, current_time, check_point2, &str->end);
+	usleep (100);
 }
 if (oneortwo == 1)
 {
-//	printf ("checkpoint[%d] ====> %ld\n", is, check_point[is]);
-	check_if_die(&re, number_of_philosophers, mutexfork, &str->breaker, current_time, check_point[is], is, time_to_die);
+	check_if_die(&re, str->philo->number_of_philosophers, str->philo->mutexfork, &str->breaker, current_time, check_point[is], is, str->philo->time_to_die);
 }
 else if (oneortwo == 2)
 {	
-//	printf ("checkpoint[%d] ====> %ld\n", is, check_point2[is]);
-	check_if_die(&re, number_of_philosophers, mutexfork, &str->breaker, current_time, check_point2[is], is, time_to_die);
+	check_if_die(&re, str->philo->number_of_philosophers, str->philo->mutexfork, &str->breaker, current_time, check_point2[is], is, str->philo->time_to_die);
 }
-//	printf("\033[0;31mre[1] = %ld re[0] = %ld \n\033[0;37m", (re)[1], (re)[0]);
 //	free (philo);
 	free (die);
 	return ((void *)re);
 }
 
-int main()
+int main(int ac, char **av)
 {
-	int i = number_of_philosophers;
+
+	int i;
 	int *is;
 	long int *died;
 	pthread_t *thread;
 	s_struct *str;
+	(void)ac;
 	
-	thread = malloc (sizeof(pthread_t) * i);
-	mutexfork = malloc (sizeof(pthread_mutex_t) * i);
-	while (i--)
+	if (ac == 5 || ac == 6)
 	{
-	pthread_mutex_init(&mutexfork[i], NULL);
-	}
-	i = number_of_philosophers;
 		str = malloc (sizeof(s_struct));
-		str->re = malloc (sizeof(long int));
-	//	str->end = 1;
-	while (i--)
-	{
-		str->index = malloc(sizeof(int));
-		str->index = &i;
-		str->number_of_times_each_philosopher_must_eat = -1;
-		str->sync = 1;
-		usleep(10);
-		pthread_create(&thread[i], NULL, ss, (void *)str);
-	}
-	i = number_of_philosophers;
-	//died = malloc (sizeof(long int) * 2);
-	while(i--)
-	{
-		pthread_join(thread[i], (void **)&is);
-		died = (long int *)is;
-	//	free(is);
-	}
-	free (thread);
-	if (died[0] == died [1] && died [1] == 0)
-	{
-		died [0] = -1;
-		died [1] = -1;
-	}
-//	printf("---->%ld\n", died[0]);
-	if (died[0] != -1 && died[1] != -1)
-	printf("\033[0;31m%ld %ld died\n\033[0;37m", died[1], died[0] + 1);
-	i = number_of_philosophers;
-	while (i--)
-	{
-		pthread_mutex_destroy(&mutexfork[i]);
+		str->philo = malloc(sizeof(s_philo));
+		str->philo->number_of_philosophers = ft_atoi(av[1]);
+		str->philo->time_to_die = ft_atoi(av[2]);
+		str->philo->time_to_eat = ft_atoi(av[3]);
+		str->philo->time_to_sleep = ft_atoi(av[4]);
+		if (ac == 6)
+			str->philo->number_of_times_each_philosopher_must_eat = ft_atoi(av[5]);
+		i = str->philo->number_of_philosophers;
+		thread = malloc (sizeof(pthread_t) * i);
+		str->philo->mutexfork = malloc (sizeof(pthread_mutex_t) * i);
+		while (i--)
+		{
+				pthread_mutex_init(&str->philo->mutexfork[i], NULL);
+		}
+		i = str->philo->number_of_philosophers;
+				str->re = malloc (sizeof(long int));
+		while (i--)
+		{
+				str->index = malloc(sizeof(int));
+				str->index = &i;
+				if (ac == 5)
+					str->philo->number_of_times_each_philosopher_must_eat = -1;
+				str->sync = 1;
+				pthread_create(&thread[i], NULL, ss, (void *)str);
+				usleep(10);
+		}
+		i = str->philo->number_of_philosophers;
+		while(i--)
+		{
+				pthread_join(thread[i], (void **)&is);
+				died = (long int *)is;
+		//		free(is);
+		}
+		free (thread);
+		if (died[0] == died [1] && died [1] == 0)
+		{
+				died [0] = -1;
+				died [1] = -1;
+		}
+		if (died[0] != -1 && died[1] != -1)
+		printf("\033[0;31m%ld %ld died\n\033[0;37m", died[1], died[0] + 1);
+		i = str->philo->number_of_philosophers;
+		while (i--)
+		{
+				pthread_mutex_destroy(&str->philo->mutexfork[i]);
+		}
 	}
 	return (0);
 }
