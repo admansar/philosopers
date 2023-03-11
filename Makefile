@@ -6,7 +6,7 @@ OBJ     = ${SRC:.c=.o}
 
 CC      = cc
 
-CFLAGS  = -Wall -Wextra -Werror
+CFLAGS  = -Wall -Wextra -Werror #-g -fsanitize=thread
 
 RED     = echo "\033[0;31m"
 
