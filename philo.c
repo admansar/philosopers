@@ -6,7 +6,7 @@
 /*   By: admansar <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/02/25 12:28:45 by admansar          #+#    #+#             */
-/*   Updated: 2023/03/11 16:45:55 by admansar         ###   ########.fr       */
+/*   Updated: 2023/03/13 19:03:50 by admansar         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,6 +39,7 @@ typedef struct t_struct
 	long int	*die;
 	long int	start_time;
 	long int	current_time;
+	pthread_mutex_t *mutexwrite;
 	s_philo		*philo;
 }				s_struct;
 
@@ -124,6 +125,14 @@ long int	c_time(long int start_time)
 	return (current_time);
 }
 
+void printer(long int current_time, long int is, s_struct *str, char *msg)
+{
+
+		pthread_mutex_lock(str->mutexwrite);
+		printf ("%ld %ld %s\n", current_time, is, msg);
+		pthread_mutex_unlock(str->mutexwrite);
+}
+
 void *ss(void *philo)
 {
 	int is;
@@ -151,7 +160,8 @@ while (str->breaker && eat_times)
 //	gettimeofday(&ct, NULL);
 //	current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
 //	c_time(&str->current_time, str->start_time, str->philo->mutexfork, right, left);
-	printf("%ld %d is thinking\n",c_time(str->start_time), is + 1);
+//	printf("%ld %d is thinking\n",c_time(str->start_time), is + 1);
+	printer(c_time(str->start_time), is + 1, str, "is thinking");
 	if (is % 2 == 1)
 	{
 		pthread_mutex_lock(&str->philo->mutexfork[left]);
@@ -168,12 +178,15 @@ while (str->breaker && eat_times)
 			pthread_mutex_unlock(&str->philo->mutexfork[right]);
 			break;
 		}
-		printf ("%ld %d has taken a fork\n", c_time(str->start_time), is + 1);
+//		printf ("%ld %d has taken a fork\n", c_time(str->start_time), is + 1);
+	printer(c_time(str->start_time), is + 1, str, "has taken a fork");
 		pthread_mutex_lock(&str->philo->mutexfork[right]);
 //		gettimeofday(&ct, NULL);
 //		str->current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
-		printf ("%ld %d has taken a fork\n", c_time(str->start_time), is + 1);
-		printf ("%ld %d is eating \n", c_time(str->start_time), is + 1);
+//		printf ("%ld %d has taken a fork\n", c_time(str->start_time), is + 1);
+//		printf ("%ld %d is eating\n", c_time(str->start_time), is + 1);
+	printer(c_time(str->start_time), is + 1, str, "has taken a fork");
+	printer(c_time(str->start_time), is + 1, str, "is eating");
 		last_meal = c_time(str->start_time);
 		time_passed_from_last_meal = c_time(str->start_time) - last_meal;
 //		printf ("2---time_passed_from_last_meal for %d is %d and it was at %ld\n", is + 1, time_passed_from_last_meal, last_meal);
@@ -196,7 +209,8 @@ while (str->breaker && eat_times)
 		pthread_mutex_lock(&str->philo->mutexfork[right]);
 //		gettimeofday(&ct, NULL);
 //		str->current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
-		printf ("%ld %d has taken a fork\n", c_time(str->start_time), is + 1);
+	//	printf ("%ld %d has taken a fork\n", c_time(str->start_time), is + 1);
+	printer(c_time(str->start_time), is + 1, str, "has taken a fork");
 		time_passed_from_last_meal = c_time(str->start_time) - last_meal;
 //		printf ("3---time_passed_from_last_meal for %d is %d and it was at %ld\n", is + 1, time_passed_from_last_meal, last_meal);
 		if (time_passed_from_last_meal >= str->philo->time_to_die || str->breaker == 0)
@@ -211,8 +225,10 @@ while (str->breaker && eat_times)
 		pthread_mutex_lock(&str->philo->mutexfork[left]);
 //		gettimeofday(&ct, NULL);
 //		str->current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
-		printf ("%ld %d has taken a fork\n", c_time(str->start_time), is + 1);
-		printf ("%ld %d is eating \n", c_time(str->start_time), is + 1);
+	//	printf ("%ld %d has taken a fork\n", c_time(str->start_time), is + 1);
+	//	printf ("%ld %d is eating \n", c_time(str->start_time), is + 1);
+	printer(c_time(str->start_time), is + 1, str, "has taken a fork");
+	printer(c_time(str->start_time), is + 1, str, "is eating");
 		last_meal = c_time(str->start_time);
 		time_passed_from_last_meal = c_time(str->start_time) - last_meal;
 //		printf ("4---time_passed_from_last_meal for %d is %d and it was at %ld\n", is + 1, time_passed_from_last_meal, last_meal);
@@ -233,7 +249,8 @@ while (str->breaker && eat_times)
 //	c_time(&str->current_time, str->start_time, str->philo->mutexfork, right, left);
 //	gettimeofday(&ct, NULL);
 //	str->current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
-	printf ("%ld %d is sleeping \n", c_time(str->start_time), is + 1);
+//	printf ("%ld %d is sleeping \n", c_time(str->start_time), is + 1);
+	printer(c_time(str->start_time), is + 1, str, "is sleeping");
 	msleep(str->philo->time_to_sleep);
 		time_passed_from_last_meal = c_time(str->start_time) - last_meal;
 //		printf ("5---time_passed_from_last_meal for %d is %d and it was at %ld\n", is + 1, time_passed_from_last_meal, last_meal);
@@ -296,21 +313,23 @@ int main(int ac, char **av)
 		i = str->philo->number_of_philosophers;
 		thread = malloc (sizeof(pthread_t) * i);
 		str->philo->mutexfork = malloc (sizeof(pthread_mutex_t) * i);
+		str->mutexwrite = malloc (sizeof(pthread_mutex_t));
 		while (i--)
 		{
 				pthread_mutex_init(&str->philo->mutexfork[i], NULL);
 		}
+				pthread_mutex_init(str->mutexwrite, NULL);
 		i = str->philo->number_of_philosophers;
 				str->re = malloc (sizeof(long int));
+		str->current_time = 0;
+			if (ac == 5)
+				str->philo->number_of_times_each_philosopher_must_eat = -1;
 		gettimeofday(&ct, NULL);
 		str->start_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000;
-		str->current_time = 0;
 		while (i--)
 		{
 			str->index = malloc(sizeof(int));
 			str->index = &i;
-			if (ac == 5)
-				str->philo->number_of_times_each_philosopher_must_eat = -1;
 			str->sync = 1;
 			pthread_create(&thread[i], NULL, ss, (void *)str);
 			usleep(10);
