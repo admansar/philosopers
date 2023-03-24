@@ -54,12 +54,12 @@ typedef struct t_struct
 }				s_struct;
 
 long int	c_time(long int start_time);
-void *cop(void *police);
+void *cop(s_struct *str);
 void printer(long int current_time, long int is, s_struct *str, char *msg);
 int ft_atoi(const char *str);
 void *ss(void *philo);
 long int	c_time(long int start_time);
-void	msleep(int tts);
+void	msleep(int tts, s_struct *str);
 
 #endif
 
@@ -92,7 +92,7 @@ int ft_atoi(const char *str)
     return (count * d);
 }
 
-void	msleep(int tts)
+void	msleep(int tts, s_struct *str)
 {
 	struct timeval ct;
 	long int start_time;
@@ -107,6 +107,13 @@ void	msleep(int tts)
 		gettimeofday(&ct, NULL);
 		current_time = ((ct.tv_sec * 1e6) + ct.tv_usec);
 		current_time -= start_time;
+		pthread_mutex_lock(str->mutexwrite);
+		if (!str->breaker)
+		{
+			pthread_mutex_unlock(str->mutexwrite);
+			break;
+		}
+		pthread_mutex_unlock(str->mutexwrite);
 	}
 }
 
@@ -128,10 +135,9 @@ void printer(long int current_time, long int is, s_struct *str, char *msg)
 		pthread_mutex_unlock(str->mutexwrite);
 }
 
-void *cop(void *police)
+void *cop(s_struct *str)
 {
 	int a;
-	s_struct *str = (s_struct *)police;
 	long int *time_passed_from_last_meal;
 	int i;
 	long int *last_meal;
@@ -142,15 +148,17 @@ void *cop(void *police)
 	a = 0;
 	while (!a)
 	{
+		pthread_mutex_lock(str->mutextime);
 		time_passed_from_last_meal[i] = c_time(str->start_time) - last_meal[i];
+		pthread_mutex_unlock(str->mutextime);
 		pthread_mutex_lock(str->mutexvalue);
-		if (time_passed_from_last_meal[i] >= str->philo->time_to_die && str->breaker == 1)
-		{
+  		if (time_passed_from_last_meal[i] >= str->philo->time_to_die && str->breaker == 1)
+  		{
 			pthread_mutex_unlock(str->mutexvalue);
 			a = 1;
 			pthread_mutex_lock(str->mutexwrite);
 			str->breaker = 0;
-			if (str->philo->number_of_times_each_philosopher_must_eat) 
+			if (str->philo->number_of_times_each_philosopher_must_eat)
 				printf("%ld %d died\n", c_time(str->start_time), i + 1);
 			if (str->philo->number_of_philosophers == 1)
 				pthread_mutex_unlock(&str->philo->mutexfork[0]);
@@ -158,6 +166,7 @@ void *cop(void *police)
 			pthread_mutex_lock(str->mutexvalue);
 		}
 		pthread_mutex_unlock(str->mutexvalue);
+		usleep (1);
 		i = (i + 1) % (str->philo->number_of_philosophers);
 	}
 	free(time_passed_from_last_meal);
@@ -173,7 +182,11 @@ void *ss(void *philo)
 	pthread_mutex_unlock(str->mutexvalue);
 	int right = is;
 	int left = is + 1;
-	int eat_times = str->philo->number_of_times_each_philosopher_must_eat;
+	int eat_times;
+
+	pthread_mutex_lock(str->mutexvalue);
+	eat_times = str->philo->number_of_times_each_philosopher_must_eat;
+	pthread_mutex_unlock(str->mutexvalue);
 	str->last_meal[is] = 0;
 
 	if (left == str->philo->number_of_philosophers)
@@ -190,9 +203,11 @@ void *ss(void *philo)
 			pthread_mutex_lock(&str->philo->mutexfork[right]);
 		 	printer(c_time(str->start_time), is + 1, str, "has taken a fork");
 	 		printer(c_time(str->start_time), is + 1, str, "is eating");
+			pthread_mutex_lock(str->mutextime);
 			str->last_meal[is] = c_time(str->start_time);
+			pthread_mutex_unlock(str->mutextime);
 			eat_times--;
-			msleep(str->philo->time_to_eat);
+			msleep(str->philo->time_to_eat, str);
 			pthread_mutex_unlock(&str->philo->mutexfork[left]);
 			pthread_mutex_unlock(&str->philo->mutexfork[right]);
 		}
@@ -200,18 +215,20 @@ void *ss(void *philo)
 		{
 			usleep (100);
 			pthread_mutex_lock(&str->philo->mutexfork[right]);
-		printer(c_time(str->start_time), is + 1, str, "has taken a fork");
+			printer(c_time(str->start_time), is + 1, str, "has taken a fork");
 			pthread_mutex_lock(&str->philo->mutexfork[left]);
-		printer(c_time(str->start_time), is + 1, str, "has taken a fork");
-		printer(c_time(str->start_time), is + 1, str, "is eating");
+			printer(c_time(str->start_time), is + 1, str, "has taken a fork");
+			printer(c_time(str->start_time), is + 1, str, "is eating");
+			pthread_mutex_lock(str->mutextime);
 			str->last_meal[is] = c_time(str->start_time);
+			pthread_mutex_unlock(str->mutextime);
 			eat_times--;
-			msleep(str->philo->time_to_eat);
+			msleep(str->philo->time_to_eat, str);
 			pthread_mutex_unlock(&str->philo->mutexfork[right]);
 			pthread_mutex_unlock(&str->philo->mutexfork[left]);
 		}
 		printer(c_time(str->start_time), is + 1, str, "is sleeping");
-		msleep(str->philo->time_to_sleep);
+		msleep(str->philo->time_to_sleep, str);
 	pthread_mutex_lock(str->mutexvalue);
 	}
 	str->philo->number_of_times_each_philosopher_must_eat = eat_times;
@@ -276,7 +293,6 @@ int main(int ac, char **av)
 	pthread_t *thread;
 	s_struct *str;
 	struct timeval ct;
-	pthread_t	*thread1;
 
 	if (ac == 5 || ac == 6)
 	{
@@ -294,7 +310,6 @@ int main(int ac, char **av)
 			str->philo->number_of_times_each_philosopher_must_eat = ft_atoi(av[5]);
 		i = str->philo->number_of_philosophers;
 		thread = malloc (sizeof(pthread_t) * i);
-		thread1 = malloc (sizeof(pthread_t));
 		str->philo->mutexfork = malloc (sizeof(pthread_mutex_t) * i);
 		str->mutexwrite = malloc (sizeof(pthread_mutex_t));
 		str->mutexvalue = malloc (sizeof(pthread_mutex_t));
@@ -311,13 +326,14 @@ int main(int ac, char **av)
 		str->breaker = 1;
 		if (ac == 5)
 			str->philo->number_of_times_each_philosopher_must_eat = -1;
+		if (!str->philo->number_of_times_each_philosopher_must_eat)
+			return (0);
 		gettimeofday(&ct, NULL);
 		str->start_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000;
 		pthread_mutex_lock(str->mutexvalue);
 		while (++i < str->philo->number_of_philosophers)
 		{
 				pthread_mutex_unlock(str->mutexvalue);
-				str->index = malloc (sizeof(int));
 				str->index = &i;
 				str->sync = 1;
 				pthread_create(&thread[i], NULL, ss, (void *)str);
@@ -328,8 +344,7 @@ int main(int ac, char **av)
 				pthread_mutex_lock(str->mutexvalue);
 		}
 			pthread_mutex_unlock(str->mutexvalue);
-			pthread_create(thread1, NULL, cop, (void *)str);
-			pthread_detach(*thread1);
+			cop(str);
 			i = str->philo->number_of_philosophers;
 		while(i--)
 				pthread_join(thread[i], NULL);
@@ -342,7 +357,6 @@ int main(int ac, char **av)
 	pthread_mutex_destroy(str->mutexvalue);
 	pthread_mutex_destroy(str->mutextime);
 	free (thread);
-	free (thread1);
 	free(str->philo->mutexfork);
 	free(str->philo);
 	free(str->last_meal);
