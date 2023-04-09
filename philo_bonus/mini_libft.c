@@ -12,9 +12,9 @@
 
 #include "philo_bonus.h"
 
-long int ft_strlen(char *c)
+long int	ft_strlen(char *c)
 {
-	int i;
+	int	i;
 
 	i = 0;
 	while (c[i])

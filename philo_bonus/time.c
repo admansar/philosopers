@@ -39,5 +39,3 @@ long int	c_time(long int start_time)
 	current_time = ((ct.tv_sec * 1e6) + ct.tv_usec) / 1000 - start_time;
 	return (current_time);
 }
-
-

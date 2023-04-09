@@ -6,7 +6,7 @@
 /*   By: admansar <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/08 15:00:05 by admansar          #+#    #+#             */
-/*   Updated: 2023/04/08 15:00:10 by admansar         ###   ########.fr       */
+/*   Updated: 2023/04/09 00:19:54 by admansar         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -49,6 +49,7 @@ char	*ft_strjoin(char const *s1, char const *s2)
 	g_g(ptr, s1, s2);
 	return (ptr);
 }
+
 int	ft_atoi(const char *str)
 {
 	int	i;

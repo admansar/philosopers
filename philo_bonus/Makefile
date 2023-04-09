@@ -1,6 +1,6 @@
 NAME    = philo_bonus
 
-SRC     = philo_bonus.c mini_libft.c mini_libft_2.c time.c threads.c
+SRC     = philo_bonus.c mini_libft.c mini_libft_2.c time.c threads.c main.c init.c guard.c
 
 OBJ     = ${SRC:.c=.o}
 
