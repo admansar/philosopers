@@ -6,7 +6,7 @@
 /*   By: admansar <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/09 00:32:27 by admansar          #+#    #+#             */
-/*   Updated: 2023/04/09 01:34:10 by admansar         ###   ########.fr       */
+/*   Updated: 2023/04/09 01:56:18 by admansar         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,10 +17,10 @@ int	main(int ac, char **av)
 	t_struct	*str;
 	int			i;
 
-	if (guard(ac, av))
-		return (1);
 	if (ac == 5 || ac == 6)
 	{
+		if (guard(ac, av))
+			return (1);
 		init_struct(&str, av, ac);
 		i = str->number_of_philosophers;
 		creating_forks(i, &str);
