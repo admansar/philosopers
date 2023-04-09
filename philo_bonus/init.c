@@ -6,7 +6,7 @@
 /*   By: admansar <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2023/04/09 00:31:46 by admansar          #+#    #+#             */
-/*   Updated: 2023/04/09 01:35:38 by admansar         ###   ########.fr       */
+/*   Updated: 2023/04/09 21:50:20 by admansar         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ void	fill_(t_struct **str, char **av, int ac)
 	(*str)->time_to_sleep = ft_atoi(av[4]);
 	(*str)->number_of_times_each_philosopher_must_eat = -1;
 	if (ac == 6)
-		(*str)->number_of_times_each_philosopher_must_eat = ft_atoi(av[5]) + 1;
+		(*str)->number_of_times_each_philosopher_must_eat = ft_atoi(av[5]) + 2;
 	if (bad_num(*str))
 	{
 		free((*str)->philo);
